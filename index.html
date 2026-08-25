@@ -4,7 +4,45 @@
   <meta charset="UTF-8" />
   <title>Word Chain</title>
   <style>
-    :root { --red: #ff1744; }
+    :root {
+      --red: #ff1744;
+      --background: #0a0a12;
+      --surface: #1a1a2e;
+      --border: #444;
+      --muted: #bbb;
+      --button-text: #fff;
+      --feedback-error: #ff8a9c;
+      --feedback-success: #73e6a1;
+      --game-over-a: #200;
+      --game-over-b: #300;
+      --frank-gradient: linear-gradient(135deg, #ff00cc, #3333ff, #00ffcc, #ffee00);
+    }
+    :root[data-theme="aurora"] {
+      --red: #0b9b8a;
+      --background: #071b1c;
+      --surface: #103337;
+      --border: #3c7370;
+      --muted: #b7d8d3;
+      --button-text: #f5fffd;
+      --feedback-error: #ffc675;
+      --feedback-success: #89e0b2;
+      --game-over-a: #15302c;
+      --game-over-b: #20473e;
+      --frank-gradient: linear-gradient(135deg, #075b58, #1a8c78, #bba738, #ec7c4f);
+    }
+    :root[data-theme="candy"] {
+      --red: #e53682;
+      --background: #25142b;
+      --surface: #442341;
+      --border: #a3558d;
+      --muted: #f2cae0;
+      --button-text: #fff9fc;
+      --feedback-error: #ffbd59;
+      --feedback-success: #9ee6d1;
+      --game-over-a: #4d163c;
+      --game-over-b: #702451;
+      --frank-gradient: linear-gradient(135deg, #e53682, #8e5fc5, #4db7ae, #ffc655);
+    }
     * { box-sizing: border-box; }
     body {
       font-family: sans-serif;
@@ -12,7 +50,7 @@
       margin: 0 auto;
       padding: 20px 20px 60px;
       text-align: center;
-      background: #0a0a12;
+      background: var(--background);
       color: #f4f4f4;
       overflow-x: hidden;
     }
@@ -27,15 +65,19 @@
 
     #langBar { display: flex; justify-content: flex-end; gap: 6px; padding-top: 10px; }
     #langBar button {
-      background: #1a1a2e; color: #ccc; border: 1px solid #444;
+      background: var(--surface); color: var(--muted); border: 1px solid var(--border);
       border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 0.85rem;
     }
-    #langBar button.active { background: var(--red); color: #fff; border-color: var(--red); }
+    #langBar button.active { background: var(--red); color: var(--button-text); border-color: var(--red); }
+    #themeSelect {
+      background: var(--surface); color: #f4f4f4; border: 1px solid var(--border);
+      border-radius: 4px; padding: 4px 8px; font-size: 0.85rem;
+    }
 
     #urgentBanner {
       margin-top: 10px;
       background: var(--red);
-      color: #fff;
+      color: var(--button-text);
       font-weight: bold;
       letter-spacing: 1px;
       padding: 8px;
@@ -58,19 +100,22 @@
     #timer.critical { animation: pulse 0.3s infinite; }
 
     h1 { font-size: 2.2rem; margin: 10px 0 4px; text-shadow: 0 0 8px var(--red); }
-    #subtitle { color: #bbb; margin-bottom: 20px; }
+    #subtitle { color: var(--muted); margin-bottom: 20px; }
 
     input {
       font-size: 1.2rem; padding: 8px; border-radius: 4px;
-      border: 1px solid #444; background: #1a1a2e; color: #fff;
+      border: 1px solid var(--border); background: var(--surface); color: #fff;
     }
     button {
       font-size: 1.2rem; padding: 8px 16px; border-radius: 4px;
-      border: 1px solid var(--red); background: var(--red); color: #fff; cursor: pointer;
+      border: 1px solid var(--red); background: var(--red); color: var(--button-text); cursor: pointer;
     }
     button:hover { filter: brightness(1.15); }
+    button:disabled { cursor: wait; opacity: 0.6; }
 
-    #chain { margin-top: 20px; font-size: 1.3rem; min-height: 1.5em; }
+    #chain { margin-top: 20px; font-size: 1.3rem; min-height: 1.5em; line-height: 1.7; }
+    #feedback { min-height: 1.5em; margin-top: 8px; color: var(--feedback-error); }
+    #feedback.success { color: var(--feedback-success); }
 
     #gameOver {
       display: none;
@@ -78,13 +123,13 @@
       padding: 20px;
       border: 2px solid var(--red);
       border-radius: 8px;
-      background: repeating-linear-gradient(45deg, #200, #200 10px, #300 10px, #300 20px);
+      background: repeating-linear-gradient(45deg, var(--game-over-a), var(--game-over-a) 10px, var(--game-over-b) 10px, var(--game-over-b) 20px);
     }
     #gameOver h2 { color: var(--red); font-size: 2rem; margin: 0 0 6px; text-shadow: 0 0 12px var(--red); }
 
     #frankSection {
       margin-top: 36px; padding: 16px; border-radius: 10px;
-      background: linear-gradient(135deg, #ff00cc, #3333ff, #00ffcc, #ffee00);
+      background: var(--frank-gradient);
       background-size: 400% 400%;
       animation: gradientShift 6s ease infinite;
     }
@@ -104,7 +149,7 @@
     }
     #settingsPanel {
       display: none; position: fixed; bottom: 40px; right: 10px;
-      background: #1a1a2e; border: 1px solid #444; border-radius: 6px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
       padding: 10px; width: 260px; text-align: left;
     }
     #settingsPanel label { font-size: 0.75rem; color: #aaa; display: block; margin-top: 6px; }
@@ -116,6 +161,11 @@
   <div id="langBar">
     <button id="langEn" class="active" onclick="setLang('en')">EN</button>
     <button id="langEs" onclick="setLang('es')">ES</button>
+    <select id="themeSelect" aria-label="Theme" onchange="setTheme(this.value)">
+      <option value="midnight">Midnight</option>
+      <option value="aurora">Aurora</option>
+      <option value="candy">Candy</option>
+    </select>
   </div>
 
   <div id="urgentBanner" data-i18n="urgent">⚠ THE CHAIN MUST NOT BREAK ⚠</div>
@@ -125,6 +175,7 @@
   <p id="subtitle" data-i18n="subtitle">Type a word to start the chain. You will not get another chance.</p>
   <input id="wordInput" data-i18n-placeholder="placeholder" type="text" placeholder="Enter a word" />
   <button id="addBtn" data-i18n="add" onclick="addWord()">Add</button>
+  <div id="feedback" role="status" aria-live="polite"></div>
   <div id="chain"></div>
 
   <div id="gameOver">
@@ -146,6 +197,8 @@
     <input id="cfgBaseUrl" placeholder="http://litellmwebapi.stg.justanswer.local" />
     <label>LiteLLM API Key</label>
     <input id="cfgApiKey" type="password" placeholder="sk-..." />
+    <label>LiteLLM Chat Model</label>
+    <input id="cfgChatModel" placeholder="gpt-4o-mini" />
     <button onclick="saveSettings()">Save (stored in this browser only)</button>
   </div>
 
@@ -166,6 +219,12 @@
         frankLoading: "Consulting the neon spirits...",
         frankError: "The neon spirits did not answer. Check your LiteLLM settings (⚙) and network.",
         frankNoKey: "No API key configured. Click ⚙ in the corner and paste your LiteLLM key.",
+        emptyWord: "Enter a word first.",
+        duplicateWord: "That word is already in this chain.",
+        wrongLetter: "Your word must begin with \"{letter}\".",
+        invalidWord: "That is not an English word.",
+        checkingWord: "Checking your word...",
+        acceptedWord: "Accepted. Keep the chain alive.",
       },
       es: {
         urgent: "⚠ LA CADENA NO DEBE ROMPERSE ⚠",
@@ -181,9 +240,17 @@
         frankLoading: "Consultando a los espíritus de neón...",
         frankError: "Los espíritus de neón no respondieron. Revisa tu configuración de LiteLLM (⚙) y tu red.",
         frankNoKey: "No hay clave API configurada. Haz clic en ⚙ y pega tu clave de LiteLLM.",
+        emptyWord: "Primero escribe una palabra.",
+        duplicateWord: "Esa palabra ya está en esta cadena.",
+        wrongLetter: "Tu palabra debe empezar por \"{letter}\".",
+        invalidWord: "Esa no es una palabra en español.",
+        checkingWord: "Comprobando tu palabra...",
+        acceptedWord: "Aceptada. Mantén viva la cadena.",
       },
     };
     let currentLang = "en";
+    const chain = [];
+    const usedWords = new Set();
 
     function setLang(lang) {
       currentLang = lang;
@@ -198,11 +265,119 @@
       });
     }
 
-    // --- word chain (basic) ---
-    function addWord() {
-      const val = document.getElementById("wordInput").value;
-      document.getElementById("chain").innerText = val;
-      document.getElementById("wordInput").value = "";
+    function setTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      document.getElementById("themeSelect").value = theme;
+      try {
+        localStorage.setItem("wordChainTheme", theme);
+      } catch (error) {
+        // The selected theme still applies when browser storage is unavailable.
+      }
+    }
+
+    function loadTheme() {
+      try {
+        return localStorage.getItem("wordChainTheme") || "midnight";
+      } catch (error) {
+        return "midnight";
+      }
+    }
+
+    function normalizedWord(word) {
+      return word.trim().normalize("NFC").toLocaleLowerCase(currentLang);
+    }
+
+    function setFeedback(message, isSuccess = false) {
+      const feedback = document.getElementById("feedback");
+      feedback.textContent = message;
+      feedback.classList.toggle("success", isSuccess);
+    }
+
+    function translate(key, replacements = {}) {
+      return Object.entries(replacements).reduce(
+        (message, [name, value]) => message.replace(`{${name}}`, value),
+        translations[currentLang][key],
+      );
+    }
+
+    async function validateWordWithLlm(word) {
+      const { baseUrl, apiKey, chatModel } = loadSettings();
+      if (!baseUrl || !apiKey) return true;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const languageName = currentLang === "es" ? "Spanish" : "English";
+
+      try {
+        const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: chatModel || "gpt-4o-mini",
+            temperature: 0,
+            max_tokens: 3,
+            messages: [{
+              role: "user",
+              content: `Is \"${word}\" a real ${languageName} dictionary word? Reply with exactly VALID or INVALID. Do not accept names, phrases, abbreviations, or invented words.`,
+            }],
+          }),
+        });
+
+        if (!res.ok) return true;
+        const data = await res.json();
+        const verdict = data.choices?.[0]?.message?.content?.trim().toUpperCase();
+        return verdict !== "INVALID";
+      } catch (error) {
+        return true;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    async function addWord() {
+      const input = document.getElementById("wordInput");
+      const addButton = document.getElementById("addBtn");
+      const word = normalizedWord(input.value);
+
+      if (!word) {
+        setFeedback(translate("emptyWord"));
+        return;
+      }
+
+      if (usedWords.has(word)) {
+        setFeedback(translate("duplicateWord"));
+        return;
+      }
+
+      const previousWord = chain.at(-1);
+      if (previousWord && word[0] !== previousWord.at(-1)) {
+        setFeedback(translate("wrongLetter", { letter: previousWord.at(-1) }));
+        return;
+      }
+
+      addButton.disabled = true;
+      input.disabled = true;
+      setFeedback(translate("checkingWord"));
+      const isValidWord = await validateWordWithLlm(word);
+      addButton.disabled = false;
+      input.disabled = false;
+
+      if (!isValidWord) {
+        setFeedback(translate("invalidWord"));
+        input.focus();
+        return;
+      }
+
+      chain.push(word);
+      usedWords.add(word);
+      document.getElementById("chain").textContent = chain.join(" -> ");
+      input.value = "";
+      input.focus();
+      setFeedback(translate("acceptedWord"), true);
       resetTimer();
     }
 
@@ -242,6 +417,7 @@
       const cfg = loadSettings();
       document.getElementById("cfgBaseUrl").value = cfg.baseUrl || "";
       document.getElementById("cfgApiKey").value = cfg.apiKey || "";
+      document.getElementById("cfgChatModel").value = cfg.chatModel || "gpt-4o-mini";
       panel.style.display = panel.style.display === "block" ? "none" : "block";
     }
 
@@ -256,7 +432,8 @@
     function saveSettings() {
       const baseUrl = document.getElementById("cfgBaseUrl").value.trim();
       const apiKey = document.getElementById("cfgApiKey").value.trim();
-      localStorage.setItem("litellmSettings", JSON.stringify({ baseUrl, apiKey }));
+      const chatModel = document.getElementById("cfgChatModel").value.trim();
+      localStorage.setItem("litellmSettings", JSON.stringify({ baseUrl, apiKey, chatModel }));
       document.getElementById("settingsPanel").style.display = "none";
     }
 
@@ -306,6 +483,10 @@
 
     // --- init ---
     setLang("en");
+    setTheme(loadTheme());
+    document.getElementById("wordInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") addWord();
+    });
     resetTimer();
   </script>
 </body>
