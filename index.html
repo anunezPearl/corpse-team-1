@@ -1,26 +1,312 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Word Chain</title>
   <style>
-    body { font-family: sans-serif; max-width: 500px; margin: 60px auto; text-align: center; }
-    input { font-size: 1.2rem; padding: 8px; }
-    button { font-size: 1.2rem; padding: 8px 16px; }
+    :root { --red: #ff1744; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 20px 20px 60px;
+      text-align: center;
+      background: #0a0a12;
+      color: #f4f4f4;
+      overflow-x: hidden;
+    }
+    body.shaking { animation: shake 0.4s; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-10px); }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-8px); }
+      80% { transform: translateX(8px); }
+    }
+
+    #langBar { display: flex; justify-content: flex-end; gap: 6px; padding-top: 10px; }
+    #langBar button {
+      background: #1a1a2e; color: #ccc; border: 1px solid #444;
+      border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 0.85rem;
+    }
+    #langBar button.active { background: var(--red); color: #fff; border-color: var(--red); }
+
+    #urgentBanner {
+      margin-top: 10px;
+      background: var(--red);
+      color: #fff;
+      font-weight: bold;
+      letter-spacing: 1px;
+      padding: 8px;
+      border-radius: 6px;
+      animation: pulse 1s infinite;
+      text-shadow: 0 0 6px #000;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--red); }
+      50% { opacity: 0.75; box-shadow: 0 0 22px var(--red); }
+    }
+
+    #timer {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: var(--red);
+      text-shadow: 0 0 10px var(--red);
+      margin: 8px 0 0;
+    }
+    #timer.critical { animation: pulse 0.3s infinite; }
+
+    h1 { font-size: 2.2rem; margin: 10px 0 4px; text-shadow: 0 0 8px var(--red); }
+    #subtitle { color: #bbb; margin-bottom: 20px; }
+
+    input {
+      font-size: 1.2rem; padding: 8px; border-radius: 4px;
+      border: 1px solid #444; background: #1a1a2e; color: #fff;
+    }
+    button {
+      font-size: 1.2rem; padding: 8px 16px; border-radius: 4px;
+      border: 1px solid var(--red); background: var(--red); color: #fff; cursor: pointer;
+    }
+    button:hover { filter: brightness(1.15); }
+
+    #chain { margin-top: 20px; font-size: 1.3rem; min-height: 1.5em; }
+
+    #gameOver {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      border: 2px solid var(--red);
+      border-radius: 8px;
+      background: repeating-linear-gradient(45deg, #200, #200 10px, #300 10px, #300 20px);
+    }
+    #gameOver h2 { color: var(--red); font-size: 2rem; margin: 0 0 6px; text-shadow: 0 0 12px var(--red); }
+
+    #frankSection {
+      margin-top: 36px; padding: 16px; border-radius: 10px;
+      background: linear-gradient(135deg, #ff00cc, #3333ff, #00ffcc, #ffee00);
+      background-size: 400% 400%;
+      animation: gradientShift 6s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    #frankSection h3 { margin-top: 0; text-shadow: 1px 1px 2px #000; }
+    #frankSection button { background: #111; border-color: #111; }
+    #frankImg { max-width: 100%; border-radius: 8px; margin-top: 10px; display: none; }
+    #frankStatus { font-size: 0.95rem; margin-top: 10px; min-height: 1.2em; }
+
+    #settingsToggle {
+      position: fixed; bottom: 10px; right: 10px; opacity: 0.5;
+      background: #222; border-color: #444; font-size: 0.8rem; padding: 4px 8px;
+    }
+    #settingsPanel {
+      display: none; position: fixed; bottom: 40px; right: 10px;
+      background: #1a1a2e; border: 1px solid #444; border-radius: 6px;
+      padding: 10px; width: 260px; text-align: left;
+    }
+    #settingsPanel label { font-size: 0.75rem; color: #aaa; display: block; margin-top: 6px; }
+    #settingsPanel input { width: 100%; font-size: 0.85rem; padding: 4px; }
+    #settingsPanel button { font-size: 0.8rem; padding: 4px 8px; margin-top: 8px; }
   </style>
 </head>
 <body>
-  <h1>Word Chain</h1>
-  <p>Type a word to start the chain.</p>
-  <input id="wordInput" type="text" placeholder="Enter a word" />
-  <button onclick="addWord()">Add</button>
+  <div id="langBar">
+    <button id="langEn" class="active" onclick="setLang('en')">EN</button>
+    <button id="langEs" onclick="setLang('es')">ES</button>
+  </div>
+
+  <div id="urgentBanner" data-i18n="urgent">⚠ THE CHAIN MUST NOT BREAK ⚠</div>
+  <div id="timer">15</div>
+
+  <h1 data-i18n="title">Word Chain</h1>
+  <p id="subtitle" data-i18n="subtitle">Type a word to start the chain. You will not get another chance.</p>
+  <input id="wordInput" data-i18n-placeholder="placeholder" type="text" placeholder="Enter a word" />
+  <button id="addBtn" data-i18n="add" onclick="addWord()">Add</button>
   <div id="chain"></div>
 
+  <div id="gameOver">
+    <h2 data-i18n="gameOverTitle">THE CHAIN HAS BROKEN</h2>
+    <p data-i18n="gameOverBody">Somewhere, a raccoon weeps. Try again.</p>
+    <button data-i18n="retry" onclick="resetTimer()">Try Again</button>
+  </div>
+
+  <div id="frankSection">
+    <h3 data-i18n="frankTitle">✨ Summon a Lisa Frank Guardian ✨</h3>
+    <button id="frankBtn" data-i18n="frankBtn" onclick="generateFrankImage()">Manifest Image</button>
+    <div id="frankStatus"></div>
+    <img id="frankImg" alt="Lisa Frank style generated image" />
+  </div>
+
+  <button id="settingsToggle" onclick="toggleSettings()">⚙</button>
+  <div id="settingsPanel">
+    <label>LiteLLM Base URL</label>
+    <input id="cfgBaseUrl" placeholder="http://litellmwebapi.stg.justanswer.local" />
+    <label>LiteLLM API Key</label>
+    <input id="cfgApiKey" type="password" placeholder="sk-..." />
+    <button onclick="saveSettings()">Save (stored in this browser only)</button>
+  </div>
+
   <script>
-    function addWord() {
-      const val = document.getElementById('wordInput').value;
-      document.getElementById('chain').innerText = val;
-      // Nothing here yet — build me! Should check last letter matches next word's first letter.
+    // --- i18n ---
+    const translations = {
+      en: {
+        urgent: "⚠ THE CHAIN MUST NOT BREAK ⚠",
+        title: "Word Chain",
+        subtitle: "Type a word to start the chain. You will not get another chance.",
+        placeholder: "Enter a word",
+        add: "Add",
+        gameOverTitle: "THE CHAIN HAS BROKEN",
+        gameOverBody: "Somewhere, a raccoon weeps. Try again.",
+        retry: "Try Again",
+        frankTitle: "✨ Summon a Lisa Frank Guardian ✨",
+        frankBtn: "Manifest Image",
+        frankLoading: "Consulting the neon spirits...",
+        frankError: "The neon spirits did not answer. Check your LiteLLM settings (⚙) and network.",
+        frankNoKey: "No API key configured. Click ⚙ in the corner and paste your LiteLLM key.",
+      },
+      es: {
+        urgent: "⚠ LA CADENA NO DEBE ROMPERSE ⚠",
+        title: "Cadena de Palabras",
+        subtitle: "Escribe una palabra para iniciar la cadena. No tendrás otra oportunidad.",
+        placeholder: "Escribe una palabra",
+        add: "Añadir",
+        gameOverTitle: "LA CADENA SE HA ROTO",
+        gameOverBody: "En algún lugar, un mapache llora. Inténtalo de nuevo.",
+        retry: "Reintentar",
+        frankTitle: "✨ Invoca un Guardián Lisa Frank ✨",
+        frankBtn: "Manifestar Imagen",
+        frankLoading: "Consultando a los espíritus de neón...",
+        frankError: "Los espíritus de neón no respondieron. Revisa tu configuración de LiteLLM (⚙) y tu red.",
+        frankNoKey: "No hay clave API configurada. Haz clic en ⚙ y pega tu clave de LiteLLM.",
+      },
+    };
+    let currentLang = "en";
+
+    function setLang(lang) {
+      currentLang = lang;
+      document.getElementById("langEn").classList.toggle("active", lang === "en");
+      document.getElementById("langEs").classList.toggle("active", lang === "es");
+      document.documentElement.lang = lang;
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        el.textContent = translations[lang][el.dataset.i18n];
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        el.placeholder = translations[lang][el.dataset.i18nPlaceholder];
+      });
     }
+
+    // --- word chain (basic) ---
+    function addWord() {
+      const val = document.getElementById("wordInput").value;
+      document.getElementById("chain").innerText = val;
+      document.getElementById("wordInput").value = "";
+      resetTimer();
+    }
+
+    // --- urgency / countdown theater ---
+    let timeLeft = 15;
+    let timerHandle = null;
+
+    function tick() {
+      timeLeft -= 1;
+      const timerEl = document.getElementById("timer");
+      timerEl.textContent = timeLeft;
+      timerEl.classList.toggle("critical", timeLeft <= 5);
+      if (timeLeft <= 0) {
+        clearInterval(timerHandle);
+        triggerGameOver();
+      }
+    }
+
+    function triggerGameOver() {
+      document.getElementById("gameOver").style.display = "block";
+      document.body.classList.add("shaking");
+      setTimeout(() => document.body.classList.remove("shaking"), 400);
+    }
+
+    function resetTimer() {
+      clearInterval(timerHandle);
+      timeLeft = 15;
+      document.getElementById("timer").textContent = timeLeft;
+      document.getElementById("timer").classList.remove("critical");
+      document.getElementById("gameOver").style.display = "none";
+      timerHandle = setInterval(tick, 1000);
+    }
+
+    // --- Lisa Frank image generation via LiteLLM proxy ---
+    function toggleSettings() {
+      const panel = document.getElementById("settingsPanel");
+      const cfg = loadSettings();
+      document.getElementById("cfgBaseUrl").value = cfg.baseUrl || "";
+      document.getElementById("cfgApiKey").value = cfg.apiKey || "";
+      panel.style.display = panel.style.display === "block" ? "none" : "block";
+    }
+
+    function loadSettings() {
+      try {
+        return JSON.parse(localStorage.getItem("litellmSettings") || "{}");
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveSettings() {
+      const baseUrl = document.getElementById("cfgBaseUrl").value.trim();
+      const apiKey = document.getElementById("cfgApiKey").value.trim();
+      localStorage.setItem("litellmSettings", JSON.stringify({ baseUrl, apiKey }));
+      document.getElementById("settingsPanel").style.display = "none";
+    }
+
+    async function generateFrankImage() {
+      const statusEl = document.getElementById("frankStatus");
+      const imgEl = document.getElementById("frankImg");
+      const { baseUrl, apiKey } = loadSettings();
+
+      if (!apiKey || !baseUrl) {
+        statusEl.textContent = translations[currentLang].frankNoKey;
+        return;
+      }
+
+      statusEl.textContent = translations[currentLang].frankLoading;
+      imgEl.style.display = "none";
+
+      try {
+        const res = await fetch(`${baseUrl}/v1/images/generations`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "dall-e-3",
+            prompt:
+              "Lisa Frank style 1990s rainbow neon sticker art of a mythical glitter creature guarding a chain of glowing letters, extremely vivid colors, airbrushed, unicorns and lightning bolts",
+            n: 1,
+            size: "1024x1024",
+          }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        const item = data.data && data.data[0];
+        const src = item && (item.url || (item.b64_json && `data:image/png;base64,${item.b64_json}`));
+        if (!src) throw new Error("No image in response");
+
+        imgEl.src = src;
+        imgEl.style.display = "block";
+        statusEl.textContent = "";
+      } catch (err) {
+        statusEl.textContent = translations[currentLang].frankError;
+      }
+    }
+
+    // --- init ---
+    setLang("en");
+    resetTimer();
   </script>
 </body>
 </html>
