@@ -142,6 +142,11 @@
     #frankSection button { background: #111; border-color: #111; }
     #frankImg { max-width: 100%; border-radius: 8px; margin-top: 10px; display: none; }
     #frankStatus { font-size: 0.95rem; margin-top: 10px; min-height: 1.2em; }
+    #songSection { margin-top: 18px; padding: 14px; border: 1px solid rgb(255 255 255 / 35%); border-radius: 8px; background: rgb(0 0 0 / 25%); text-align: left; }
+    #songSection h3 { margin: 0 0 8px; }
+    #songStatus { min-height: 1.2em; font-size: 0.9rem; }
+    #songRecommendation { margin: 12px 0 0; padding: 12px; border-left: 4px solid var(--red); background: rgb(0 0 0 / 24%); white-space: pre-wrap; font: inherit; line-height: 1.45; }
+    #songBtn { margin-top: 10px; font-size: 0.95rem; padding: 6px 10px; }
 
     #settingsToggle {
       position: fixed; bottom: 10px; right: 10px; opacity: 0.5;
@@ -189,6 +194,12 @@
     <button id="frankBtn" data-i18n="frankBtn" onclick="generateFrankImage()">Manifest Image</button>
     <div id="frankStatus"></div>
     <img id="frankImg" alt="Lisa Frank style generated image" />
+    <div id="songSection">
+      <h3 data-i18n="songTitle">🎵 Song for this chain</h3>
+      <div id="songStatus" data-i18n="songIdle">Manifest an image to get a song recommendation.</div>
+      <pre id="songRecommendation" hidden></pre>
+      <button id="songBtn" data-i18n="songBtn" onclick="recommendSong()" disabled>Recommend a song</button>
+    </div>
   </div>
 
   <button id="settingsToggle" onclick="toggleSettings()">⚙</button>
@@ -219,6 +230,12 @@
         frankLoading: "Consulting the neon spirits...",
         frankError: "The neon spirits did not answer. Check your LiteLLM settings (⚙) and network.",
         frankNoKey: "No API key configured. Click ⚙ in the corner and paste your LiteLLM key.",
+        songTitle: "🎵 Song for this chain",
+        songIdle: "Manifest an image to get a song recommendation.",
+        songBtn: "Recommend a song",
+        songLoading: "Matching the chain and guardian to a song...",
+        songError: "The song oracle did not answer. Try again.",
+        songNoKey: "Add LiteLLM settings before requesting a song.",
         emptyWord: "Enter a word first.",
         duplicateWord: "That word is already in this chain.",
         wrongLetter: "Your word must begin with \"{letter}\".",
@@ -240,6 +257,12 @@
         frankLoading: "Consultando a los espíritus de neón...",
         frankError: "Los espíritus de neón no respondieron. Revisa tu configuración de LiteLLM (⚙) y tu red.",
         frankNoKey: "No hay clave API configurada. Haz clic en ⚙ y pega tu clave de LiteLLM.",
+        songTitle: "🎵 Canción para esta cadena",
+        songIdle: "Manifiesta una imagen para obtener una recomendación musical.",
+        songBtn: "Recomendar una canción",
+        songLoading: "Relacionando la cadena y el guardián con una canción...",
+        songError: "El oráculo musical no respondió. Inténtalo de nuevo.",
+        songNoKey: "Configura LiteLLM antes de pedir una canción.",
         emptyWord: "Primero escribe una palabra.",
         duplicateWord: "Esa palabra ya está en esta cadena.",
         wrongLetter: "Tu palabra debe empezar por \"{letter}\".",
@@ -440,6 +463,7 @@
     async function generateFrankImage() {
       const statusEl = document.getElementById("frankStatus");
       const imgEl = document.getElementById("frankImg");
+      const songBtn = document.getElementById("songBtn");
       const { baseUrl, apiKey } = loadSettings();
 
       if (!apiKey || !baseUrl) {
@@ -449,6 +473,11 @@
 
       statusEl.textContent = translations[currentLang].frankLoading;
       imgEl.style.display = "none";
+      songBtn.disabled = true;
+      document.getElementById("songRecommendation").hidden = true;
+      document.getElementById("songStatus").textContent = translations[currentLang].songIdle;
+
+      const chainDescription = chain.length ? chain.join(" → ") : "an empty word chain";
 
       try {
         const res = await fetch(`${baseUrl}/v1/images/generations`, {
@@ -460,7 +489,7 @@
           body: JSON.stringify({
             model: "dall-e-3",
             prompt:
-              "Lisa Frank style 1990s rainbow neon sticker art of a mythical glitter creature guarding a chain of glowing letters, extremely vivid colors, airbrushed, unicorns and lightning bolts",
+              `Lisa Frank style 1990s rainbow neon sticker art of a mythical glitter creature guarding a chain of glowing letters. The word chain is: ${chainDescription}. Make the chain's words visually meaningful in the scene. Use extremely vivid colors, airbrushing, unicorns, and lightning bolts.`,
             n: 1,
             size: "1024x1024",
           }),
@@ -476,8 +505,74 @@
         imgEl.src = src;
         imgEl.style.display = "block";
         statusEl.textContent = "";
+        songBtn.disabled = false;
+        recommendSong(src);
       } catch (err) {
         statusEl.textContent = translations[currentLang].frankError;
+        document.getElementById("songStatus").textContent = translations[currentLang].songIdle;
+      }
+    }
+
+    // --- Song recommendation from the current chain + generated image ---
+    async function recommendSong(imageSrc = document.getElementById("frankImg").src) {
+      const statusEl = document.getElementById("songStatus");
+      const recommendationEl = document.getElementById("songRecommendation");
+      const button = document.getElementById("songBtn");
+      const { baseUrl, apiKey, chatModel } = loadSettings();
+
+      if (!apiKey || !baseUrl) {
+        statusEl.textContent = translations[currentLang].songNoKey;
+        return;
+      }
+      if (!imageSrc) {
+        statusEl.textContent = translations[currentLang].songIdle;
+        return;
+      }
+
+      const chainDescription = chain.length ? chain.join(" → ") : "(no words entered yet)";
+      button.disabled = true;
+      recommendationEl.hidden = true;
+      statusEl.textContent = translations[currentLang].songLoading;
+
+      try {
+        const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: chatModel || "gpt-4o-mini",
+            temperature: 0.7,
+            max_tokens: 180,
+            messages: [
+              {
+                role: "system",
+                content: "You are a music curator. Recommend exactly one real song that best matches both the word chain and the attached image. Reply in exactly this format: Song: <title>\nArtist: <artist>\nWhy: <one concise sentence>. Do not invent a song or artist.",
+              },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: `Word chain: ${chainDescription}\nChoose a song that captures the mood, imagery, and progression.` },
+                  { type: "image_url", image_url: { url: imageSrc } },
+                ],
+              },
+            ],
+          }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const recommendation = data.choices?.[0]?.message?.content?.trim();
+        if (!recommendation) throw new Error("No recommendation returned");
+
+        recommendationEl.textContent = recommendation;
+        recommendationEl.hidden = false;
+        statusEl.textContent = "";
+      } catch (err) {
+        statusEl.textContent = translations[currentLang].songError;
+      } finally {
+        button.disabled = false;
       }
     }
 

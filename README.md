@@ -16,6 +16,8 @@ Workshop round 1 (`round-1-abba`). Added:
 - A word can only appear once in a chain. Matching is case-insensitive.
 - When LiteLLM settings are configured, the app asks the selected chat model to verify
   that an entry is a real English or Spanish word, matching the selected language.
+- After the Lisa Frank guardian image is generated, the same LiteLLM chat model receives
+  the current word chain and image and recommends one matching song with a short rationale.
 - If the LLM endpoint is unavailable, slow, or returns an error, the app accepts the
   entry so the game remains playable offline.
 
